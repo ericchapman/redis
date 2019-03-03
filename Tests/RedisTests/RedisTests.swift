@@ -355,6 +355,15 @@ class RedisTests: XCTestCase {
         XCTAssertEqual(rangeScoreResp2[2].string, "data3")
         XCTAssertEqual(rangeScoreResp2[3].string, "4")
 
+        let countResp3 = try redis.zcount("zset1", min: "-inf", max: "+inf").wait()
+        XCTAssertEqual(countResp3, 3)
+
+        let removeResp1 = try redis.zrem("zset1", members: [RedisData(bulk: "data1")]).wait()
+        XCTAssertEqual(removeResp1, 1)
+
+        let countResp4 = try redis.zcount("zset1", min: "-inf", max: "+inf").wait()
+        XCTAssertEqual(countResp4, 2)
+
         let _ = try redis.delete(["zset1"]).wait()
     }
 
