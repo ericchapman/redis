@@ -60,7 +60,7 @@ public final class RedisClient: DatabaseConnection, BasicWorker {
 
     private func send(_ messages: [RedisData], onResponse: @escaping (RedisData) throws -> Void) -> Future<Void> {
         // if currentSend is not nil, previous send has not completed
-        assert(currentSend == nil, "Attempting to call `send(...)` again before previous invocation has completed.")
+        //assert(currentSend == nil, "Attempting to call `send(...)` again before previous invocation has completed.")
 
         // ensure the connection is not closed
         guard !isClosed else {
@@ -69,7 +69,7 @@ public final class RedisClient: DatabaseConnection, BasicWorker {
 
         // create a new promise and store it
         let promise = eventLoop.newPromise(Void.self)
-        currentSend = promise
+        //currentSend = promise
 
         // cascade this enqueue to the newly created promise
         queue.enqueue(messages) { message in
@@ -78,7 +78,7 @@ public final class RedisClient: DatabaseConnection, BasicWorker {
         }.cascade(promise: promise)
 
         // when the promise completes, remove the reference to it
-        promise.futureResult.always { self.currentSend = nil }
+        //promise.futureResult.always { self.currentSend = nil }
 
         // return the promise's future result (same as `queue.enqueue`)
         return promise.futureResult

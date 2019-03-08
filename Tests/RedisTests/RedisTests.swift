@@ -363,6 +363,27 @@ class RedisTests: XCTestCase {
 
         let _ = try redis.delete(["zset1"]).wait()
     }
+    
+    func testBackToBackTransactions() throws {
+        let redis = try RedisClient.makeTest()
+        defer { redis.close() }
+        _ = try redis.command("FLUSHALL").wait()
+        
+        // Submit a bunch of jobs back to back that require and order of execution
+        let getNilFuture = redis.get("key", as: String.self)
+        let setFuture = redis.rawSet("key", to: RedisData(bulk: "value"))
+        let getValueFuture = redis.get("key", as: String.self)
+        let deleteFuture = redis.delete("key")
+        
+        // Check the results in reverse order just to make sure
+        try deleteFuture.wait()
+        XCTAssertEqual(try getValueFuture.wait(), "value")
+        try setFuture.wait()
+        XCTAssertEqual(try getNilFuture.wait(), nil)
+        
+        // Make sure it is deleted
+        XCTAssertEqual(try redis.get("key", as: String.self).wait(), nil)
+    }
 
     static let allTests = [
         ("testCRUD", testCRUD),
@@ -374,7 +395,8 @@ class RedisTests: XCTestCase {
         ("testExpire", testExpire),
         ("testSetCommands", testSetCommands),
         ("testHashCommands", testHashCommands),
-        ("testSortedSetCommands", testSortedSetCommands)
+        ("testSortedSetCommands", testSortedSetCommands),
+        ("testBackToBackTransactions", testBackToBackTransactions),
     ]
 }
 
